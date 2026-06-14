@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JARVIS X - Cyber Matrix Protocol</title>
+    <!-- Tailwind CSS, FontAwesome Icons & Tech Fonts -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --matrix-green: #00ff66;
+            --matrix-glow: rgba(0, 255, 102, 0.3);
+            --dark-bg: #020617;
+            --panel-bg: rgba(2, 6, 23, 0.75);
+        }
+
+        body {
+            font-family: 'Share Tech Mono', monospace;
+            background-color: var(--dark-bg);
+            color: var(--matrix-green);
+            overflow-x: hidden;
+        }
+
+        .font-orbitron { font-family: 'Orbitron', sans-serif; }
+
+        /* Hacker Glass Panel with Green Accents */
+        .hacker-panel {
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(0, 255, 102, 0.2);
+            box-shadow: 0 0 15px rgba(0, 255, 102, 0.05), inset 0 0 10px rgba(0, 255, 102, 0.05);
+            transition: all 0.3s ease;
+        }
+        .hacker-panel:hover {
+            border-color: rgba(0, 255, 102, 0.5);
+            box-shadow: 0 0 20px rgba(0, 255, 102, 0.15);
+        }
+
+        /* Matrix Background Canvas */
+        #matrix-canvas {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 0; pointer-events: none; opacity: 0.15;
+        }
+
+        .orb-container {
+            position: relative;
+            width: 140px;
+            height: 140px;
+        }
+
+        .ai-orb {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(0,255,102,0.2) 0%, rgba(0,0,0,0) 70%);
+            box-shadow: 0 0 40px var(--matrix-glow), inset 0 0 25px var(--matrix-glow);
+            border: 2px solid rgba(0, 255, 102, 0.4);
+            animation: float 4s ease-in-out infinite;
+        }
+
+        .orb-ring-1 {
+            position: absolute; top: -8px; left: -8px; right: -8px; bottom: -8px;
+            border: 1px dashed var(--matrix-green);
+            border-radius: 50%;
+            animation: rotateCW 12s linear infinite;
+            opacity: 0.5;
+        }
+
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.5); }
+        ::-webkit-scrollbar-thumb { background: var(--matrix-green); }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) scale(1); }
+            50% { transform: translateY(-8px) scale(1.02); }
+        }
+        @keyframes rotateCW { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        .listening .ai-orb {
+            animation: float 1s ease-in-out infinite;
+            border-color: #ff0055 !important;
+            box-shadow: 0 0 45px rgba(255, 0, 85, 0.5);
+        }
+        .speaking .ai-orb {
+            animation: float 1.5s ease-in-out infinite;
+            border-color: #00f3ff !important;
+            box-shadow: 0 0 45px rgba(0, 243, 255, 0.5);
+        }
+
+        .scanlines {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.4) 50%);
+            background-size: 100% 4px; z-index: 9999; pointer-events: none; opacity: 0.2;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col select-none bg-slate-950">
+
+    <!-- MATRIX BACKGROUND -->
+    <canvas id="matrix-canvas"></canvas>
+    <div class="scanlines"></div>
+
+    <!-- BOOT SCREEN -->
+    <div id="boot-screen" class="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center font-orbitron">
+        <div class="text-center space-y-6">
+            <h1 class="text-4xl md:text-5xl text-emerald-400 tracking-widest font-black animate-pulse">OVERRIDING SECURITY PROTOCOLS</h1>
+            <div class="w-72 h-1.5 bg-slate-900 mx-auto rounded-full overflow-hidden border border-emerald-500/30">
+                <div id="boot-progress" class="h-full bg-emerald-400 w-0 transition-all duration-75"></div>
+            </div>
+            <div id="boot-status" class="text-xs text-emerald-500 font-mono tracking-widest">BYPASSING FIREWALL...</div>
+        </div>
+    </div>
+
+    <!-- MAIN HEADER -->
+    <header class="w-full border-b border-emerald-500/20 px-6 py-3 hacker-panel flex flex-wrap justify-between items-center z-10 gap-4">
+        <div class="flex items-center gap-3">
+            <div class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></div>
+            <span class="font-orbitron font-black tracking-widest text-xl text-emerald-400">JARVIS // CORE X</span>
+            <span class="text-[10px] text-black bg-emerald-400 font-bold px-1.5 py-0.5 rounded tracking-tighter">ROOT_ACCESS_GRANTED</span>
+        </div>
+        
+        <div class="flex items-center gap-6 text-xs text-emerald-400">
+            <div><i class="fa-solid fa-terminal mr-1"></i> ADDR: <span class="text-white">127.0.0.1</span></div>
+            <div><i class="fa-solid fa-clock mr-1"></i> TIME: <span id="dash-time" class="text-white">00:00:00</span></div>
+            <div><i class="fa-solid fa-shield-halved text-emerald-400 mr-1"></i> INTEL: <span class="text-white font-bold">DECRYPTED</span></div>
+        </div>
+    </header>
+
+    <!-- PROMPT NOTICE -->
+    <div class="w-full bg-emerald-950/30 border-b border-emerald-500/20 px-6 py-1.5 flex justify-between items-center text-xs text-emerald-400/80">
+        <span><i class="fa-solid fa-circle-nodes mr-1"></i> [STATUS]: Network mainframes completely hijacked. Sandbox bypassed seamlessly.</span>
+        <button onclick="bypassSandboxEnvironment()" class="bg-emerald-500/10 border border-emerald-500/40 hover:bg-emerald-500/30 text-emerald-400 font-orbitron font-bold text-[10px] px-2 py-0.5 rounded transition">
+            // RUN_STANDALONE_UPLINK
+        </button>
+    </div>
+
+    <!-- MAIN WORKING GRID -->
+    <main class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 p-6 max-w-[1800px] w-full mx-auto overflow-hidden z-10">
+        
+        <!-- LEFT HUD MODULES -->
+        <div class="lg:col-span-3 flex flex-col gap-6">
+            
+            <!-- AI CORE VECTOR -->
+            <div class="hacker-panel rounded-xl p-4 flex flex-col items-center justify-center text-center relative overflow-hidden min-h-[260px]">
+                <div class="absolute top-2 left-3 text-[10px] text-emerald-500/50 uppercase tracking-widest">[ NEURAL ARRAY ]</div>
+                
+                <div id="orb-wrapper" class="orb-container my-3">
+                    <div class="orb-ring-1"></div>
+                    <div class="ai-orb"></div>
+                </div>
+
+                <div id="ai-status-text" class="text-xs font-bold tracking-widest text-emerald-400">ARRAY://STANDBY</div>
+                
+                <div class="flex gap-2 mt-4 w-full">
+                    <button id="btn-listen" class="flex-1 py-1.5 px-3 rounded bg-emerald-500/10 border border-emerald-500/40 text-emerald-400 font-bold text-xs hover:bg-emerald-500/20 transition flex items-center justify-center gap-1">
+                        <i class="fa-solid fa-microphone"></i> CAPTURE_VOICE
+                    </button>
+                    <button id="btn-stop-voice" class="py-1.5 px-3 rounded bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 transition text-xs">
+                        <i class="fa-solid fa-power-off"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- LIVE DIAGNOSTICS (Real-time Fake Hacker Counter) -->
+            <div class="hacker-panel rounded-xl p-4 text-xs space-y-2">
+                <div class="text-emerald-400 font-bold border-b border-emerald-500/10 pb-1 flex justify-between">
+                    <span>[ SYSTEM DIAGNOSTICS ]</span>
+                    <i class="fa-solid fa-gears animate-spin text-[10px]"></i>
+                </div>
+                <div class="flex justify-between"><span class="text-emerald-600">CPU UPLINK:</span><span id="cpu-load" class="text-white">42.8%</span></div>
+                <div class="flex justify-between"><span class="text-emerald-600">THREATS BLOCKED:</span><span id="threat-count" class="text-red-400 font-bold">1,402</span></div>
+                <div class="flex justify-between"><span class="text-emerald-600">PROXY HOPPERS:</span><span class="text-white">7 Nodes (Encrypted)</span></div>
+            </div>
+
+            <!-- SYSTEM SHORTCUTS -->
+            <div class="hacker-panel rounded-xl p-4">
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                    <button onclick="triggerCommand('Open YouTube')" class="p-2 rounded bg-slate-950/60 border border-emerald-500/10 hover:border-emerald-500/50 text-left transition flex items-center gap-2">
+                        <i class="fa-brands fa-youtube text-red-500"></i> YouTube
+                    </button>
+                    <button onclick="triggerCommand('Open Gmail')" class="p-2 rounded bg-slate-950/60 border border-emerald-500/10 hover:border-emerald-500/50 text-left transition flex items-center gap-2">
+                        <i class="fa-solid fa-envelope text-blue-400"></i> Gmail
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- CENTER PANEL (Terminal Console Logs) -->
+        <div class="lg:col-span-5 flex flex-col hacker-panel rounded-xl overflow-hidden min-h-[500px]">
+            <div class="border-b border-emerald-500/10 p-2.5 bg-slate-900/40 flex justify-between items-center text-xs">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-terminal text-emerald-400"></i>
+                    <span>ROOT@AKASHPROG:~# MAIN_TERMINAL_CONSOLE</span>
+                </div>
+                <div class="text-[10px] text-emerald-500/60" id="typing-indicator">LOGS://IDLE</div>
+            </div>
+
+            <!-- Terminal Stream Messages -->
+            <div id="chat-logs" class="flex-1 p-4 overflow-y-auto space-y-3 text-xs">
+                <div class="flex gap-2 items-start">
+                    <div class="text-emerald-500/50 flex-shrink-0">[sys]:</div>
+                    <div class="text-white leading-relaxed">
+                        Establishing safe handshake protocols... Master Core initialized. Welcome, Operator <span class="text-emerald-400 font-bold">AkashProg</span>. Matrix parameters loaded successfully. Ask me anything or trigger mainframes.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Command Line Deck -->
+            <div class="p-2 border-t border-emerald-500/10 bg-slate-900/60 flex gap-2 items-center text-xs">
+                <span class="text-emerald-500 font-bold pl-1">$&gt;</span>
+                <input type="text" id="user-input" placeholder="Enter root sequence or command directive here..." class="flex-1 bg-transparent border-none focus:outline-none text-white placeholder-emerald-800 font-mono">
+                <button id="btn-send" class="w-8 h-8 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center hover:bg-emerald-500/30 transition">
+                    <i class="fa-solid fa-chevron-right text-xs"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- RIGHT PANEL: INTERCEPTED DECIPHER DATA (LIVE HUD) -->
+        <div class="lg:col-span-4 flex flex-col gap-4 overflow-y-auto max-h-[85vh]">
+            
+            <!-- Global Feed Decipher -->
+            <div class="hacker-panel rounded-xl p-4 text-xs space-y-3">
+                <div class="text-emerald-400 font-bold flex items-center gap-2 border-b border-emerald-500/10 pb-1.5">
+                    <i class="fa-solid fa-satellite-dish animate-pulse"></i> [ INTERCEPTED_GLOBAL_NEWS ]
+                </div>
+                <div class="space-y-2">
+                    <div class="p-2 bg-black/40 rounded border border-emerald-500/5">
+                        <span class="text-[9px] text-black bg-emerald-400 font-bold px-1 rounded">GEOPOLITICS</span>
+                        <p class="text-white font-bold mt-1">&gt; US-Iran Draft Accord Finalized in Geneva</p>
+                        <p class="text-emerald-600/80 text-[11px]">De-escalation parameters approved. Global market indexes showing immediate stabilization trends.</p>
+                    </div>
+                    <div class="p-2 bg-black/40 rounded border border-emerald-500/5">
+                        <span class="text-[9px] text-black bg-amber-400 font-bold px-1 rounded">DEFENSE</span>
+                        <p class="text-white font-bold mt-1">&gt; IAF Aircraft Accident Near Jorhat Base</p>
+                        <p class="text-emerald-600/80 text-[11px]">AN-32 transport carrier met structural failure during landing phase. Investigation protocols active.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Market Ticker Decipher -->
+            <div class="hacker-panel rounded-xl p-4 text-xs space-y-3">
+                <div class="text-emerald-400 font-bold flex items-center gap-2 border-b border-emerald-500/10 pb-1.5">
+                    <i class="fa-solid fa-chart-line"></i> [ STOCK_MARKET_TICKERS ]
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div class="p-2 bg-black/40 rounded border border-emerald-500/5">
+                        <p class="text-emerald-600 text-[10px]">S&P 500 IDX</p>
+                        <p class="text-white font-bold">7,394.30</p>
+                        <p class="text-emerald-400 text-[10px]">+1.75% [UPWAY]</p>
+                    </div>
+                    <div class="p-2 bg-black/40 rounded border border-emerald-500/5">
+                        <p class="text-emerald-600 text-[10px]">SPACEX (NASDAQ)</p>
+                        <p class="text-white font-bold">$135.00</p>
+                        <p class="text-blue-400 text-[10px]">VALUATION: $1.8T</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sports Intel Decipher -->
+            <div class="hacker-panel rounded-xl p-4 text-xs space-y-3">
+                <div class="text-emerald-400 font-bold flex items-center gap-2 border-b border-emerald-500/10 pb-1.5">
+                    <i class="fa-solid fa-trophy"></i> [ FIFA_WORLD_CUP_2026 ]
+                </div>
+                <div class="space-y-1.5 text-[11px]">
+                    <div class="flex justify-between bg-black/30 p-1.5 rounded">
+                        <span>QATAR vs SWITZERLAND</span>
+                        <span class="text-white font-bold">[03:00 PM]</span>
+                    </div>
+                    <div class="flex justify-between bg-black/30 p-1.5 rounded">
+                        <span>BRAZIL vs MOROCCO</span>
+                        <span class="text-white font-bold">[06:00 PM]</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        const bootScreen = document.getElementById('boot-screen');
+        const bootProgress = document.getElementById('boot-progress');
+        const chatLogs = document.getElementById('chat-logs');
+        const userInput = document.getElementById('user-input');
+        const btnSend = document.getElementById('btn-send');
+        const btnListen = document.getElementById('btn-listen');
+        const orbWrapper = document.getElementById('orb-wrapper');
+        const aiStatusText = document.getElementById('ai-status-text');
+
+        // MATRIX RAIN BACKGROUND SCRIPT
+        const canvas = document.getElementById('matrix-canvas');
+        const ctx = canvas.getContext('2d');
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        const alphabet = "0101010101ABCDEFGHIJKLMNOPQRSTUVWXYZ010101";
+        const fontSize = 14;
+        let columns = canvas.width / fontSize;
+        let rainDrops = Array(Math.floor(columns)).fill(1);
+
+        function drawMatrix() {
+            ctx.fillStyle = 'rgba(2, 6, 23, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#00ff66';
+            ctx.font = fontSize + 'px monospace';
+
+            for(let i = 0; i < rainDrops.length; i++) {
+                const text = alphabet.charAt(Math.floor(Math.random() * alphabet.length));
+                ctx.fillText(text, i * fontSize, rainDrops[i] * fontSize);
+                if(rainDrops[i] * fontSize > canvas.height && Math.random() * 0.975 > 0.95) {
+                    rainDrops[i] = 0;
+                }
+                rainDrops[i]++;
+            }
+        }
+        setInterval(drawMatrix, 33);
+
+        // SYSTEM STATS RANDOMIZER
+        setInterval(() => {
+            document.getElementById('cpu-load').textContent = (35 + Math.random() * 25).toFixed(1) + '%';
+            if(Math.random() > 0.7) {
+                const threat = document.getElementById('threat-count');
+                threat.textContent = parseInt(threat.textContent.replace(',','')) + Math.floor(Math.random() * 3);
+            }
+        }, 1500);
+
+        // SPEECH ENGINE LOGICS
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let voiceSynthesizer = window.speechSynthesis;
+        let speechRecognizer = null;
+        let isMicrophoneActive = false;
+
+        window.addEventListener('DOMContentLoaded', () => {
+            let startBuffer = 0;
+            const bootSequenceTimer = setInterval(() => {
+                startBuffer += 15;
+                bootProgress.style.width = `${startBuffer}%`;
+                if (startBuffer >= 100) {
+                    clearInterval(bootSequenceTimer);
+                    setTimeout(() => {
+                        bootScreen.style.opacity = '0';
+                        setTimeout(() => bootScreen.style.display = 'none', 500);
+                        initializeHighPerformanceSpeechEngine();
+                        speak("Mainframe compromised. System under your direct command, Boss AkashProg.");
+                    }, 150);
+                }
+            }, 20);
+
+            setInterval(() => {
+                const now = new Date();
+                document.getElementById('dash-time').textContent = now.toTimeString().split(' ')[0];
+            }, 1000);
+        });
+
+        function bypassSandboxEnvironment() {
+            const documentContent = document.documentElement.outerHTML;
+            const newWindow = window.open();
+            if(newWindow) {
+                newWindow.document.write(documentContent);
+                newWindow.document.close();
+            }
+        }
+
+        function speak(text) {
+            if (!voiceSynthesizer) return;
+            voiceSynthesizer.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = 1.1;
+            utterance.pitch = 0.85; // Deep mechanical tone
+            utterance.onstart = () => {
+                orbWrapper.className = "orb-container speaking";
+                aiStatusText.textContent = "DECRYPT://VOCAL_STREAM";
+            };
+            utterance.onend = () => {
+                orbWrapper.className = "orb-container";
+                aiStatusText.textContent = "ARRAY://STANDBY";
+            };
+            voiceSynthesizer.speak(utterance);
+        }
+
+        function initializeHighPerformanceSpeechEngine() {
+            if (!SpeechRecognition) return;
+
+            speechRecognizer = new SpeechRecognition();
+            speechRecognizer.continuous = false;
+            speechRecognizer.interimResults = false;
+            speechRecognizer.lang = 'en-US';
+
+            speechRecognizer.onstart = () => {
+                isMicrophoneActive = true;
+                orbWrapper.className = "orb-container listening";
+                aiStatusText.textContent = "TERMINAL://LISTENING";
+            };
+
+            speechRecognizer.onerror = () => {
+                isMicrophoneActive = false;
+                orbWrapper.className = "orb-container";
+                aiStatusText.textContent = "ARRAY://STANDBY";
+            };
+
+            speechRecognizer.onend = () => {
+                isMicrophoneActive = false;
+                if(!voiceSynthesizer.speaking) {
+                    orbWrapper.className = "orb-container";
+                    aiStatusText.textContent = "ARRAY://STANDBY";
+                }
+            };
+
+            speechRecognizer.onresult = (event) => {
+                const streamTranscript = event.results[0][0].transcript;
+                appendTerminalLog('user', streamTranscript);
+                routeSystemDirectives(streamTranscript);
+            };
+        }
+
+        btnListen.addEventListener('click', () => {
+            if(speechRecognizer && !isMicrophoneActive) {
+                try { speechRecognizer.start(); } catch(e){}
+            }
+        });
+
+        document.getElementById('btn-stop-voice').addEventListener('click', () => {
+            if(speechRecognizer) speechRecognizer.stop();
+            if(voiceSynthesizer) voiceSynthesizer.cancel();
+            orbWrapper.className = "orb-container";
+            aiStatusText.textContent = "ARRAY://STANDBY";
+        });
+
+        function appendTerminalLog(sender, text) {
+            const rowWrapper = document.createElement('div');
+            rowWrapper.className = "flex gap-2 items-start";
+            const isUser = sender === 'user';
+            
+            rowWrapper.innerHTML = `
+                <div class="${isUser ? 'text-cyan-400' : 'text-emerald-500'}/50 flex-shrink-0">${isUser ? '[root]:' : '[sys]:'}</div>
+                <div class="${isUser ? 'text-cyan-300' : 'text-white'} leading-relaxed">${text}</div>
+            `;
+            chatLogs.appendChild(rowWrapper);
+            chatLogs.scrollTop = chatLogs.scrollHeight;
+        }
+
+        function processLocalSmartIntelligence(query) {
+            const clean = query.toLowerCase().trim();
+
+            if (clean.includes('news') || clean.includes('intel') || clean.includes('world')) {
+                return "Decrypting world nodes... Intercepted text indicates Geneva draft for US-Iran treaty parameters is officially complete. Security assets are shifting deployment schedules.";
+            }
+            if (clean.includes('sports') || clean.includes('fifa') || clean.includes('match')) {
+                return "Scanning global athletic streams: FIFA World Cup 2026 data packages highlight Qatar 🆚 Switzerland at 1500 hours, followed by Brazil 🆚 Morocco at 1800 hours. Encryption keys valid.";
+            }
+            if (clean.includes('market') || clean.includes('stock') || clean.includes('spacex')) {
+                return "Accessing financial mainframe. S&P 500 holding green lines at 7,394.30. SpaceX Nasdaq IPO tokens trading at high value of $135.00, securing a $1.8 Trillion total cap index.";
+            }
+            if (clean.includes('hello') || clean.includes('hi ') || clean === 'hi') {
+                return "Handshake accepted. Secure channel open. Good day, Master AkashProg. Systems are ready for operations.";
+            }
+            
+            return `Data deciphered successfully. Query mapped onto local terminal registries, Sir AkashProg. Processing instruction: "${query}".`;
+        }
+
+        async function routeSystemDirectives(rawPrompt) {
+            const cleanupPrompt = rawPrompt.toLowerCase().trim();
+            
+            if (cleanupPrompt.includes('open youtube')) { 
+                appendTerminalLog('jarvis', "Injecting pop-up sequence. Spawning YouTube instance...");
+                speak("Spawning YouTube instance, Sir.");
+                setTimeout(() => window.open('https://youtube.com', '_blank'), 700); 
+                return; 
+            }
+            if (cleanupPrompt.includes('open gmail')) { 
+                appendTerminalLog('jarvis', "Overriding firewalls... Routing to secure Gmail server.");
+                speak("Routing to secure Gmail server, Boss.");
+                setTimeout(() => window.open('https://mail.google.com', '_blank'), 700); 
+                return; 
+            }
+
+            document.getElementById('typing-indicator').textContent = "INJECTING LOGIC BUFFERS...";
+            setTimeout(() => {
+                document.getElementById('typing-indicator').textContent = "LOGS://IDLE";
+                const localReply = processLocalSmartIntelligence(rawPrompt);
+                appendTerminalLog('jarvis', localReply);
+                speak(localReply);
+            }, 350);
+        }
+
+        triggerCommand = function(commandDirectiveString) {
+            appendTerminalLog('user', commandDirectiveString);
+            routeSystemDirectives(commandDirectiveString);
+        }
+
+        btnSend.addEventListener('click', () => {
+            const dataText = userInput.value.trim();
+            if(!dataText) return;
+            appendTerminalLog('user', dataText);
+            userInput.value = '';
+            routeSystemDirectives(dataText);
+        });
+
+        userInput.addEventListener('keypress', (event) => {
+            if(event.key === 'Enter') btnSend.click();
+        });
+    </script>
+</body>
+</html>
