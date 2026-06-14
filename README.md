@@ -13,6 +13,6 @@ A futuristic Jarvis-style AI assistant featuring a sleek cyberpunk-themed interf
 
 🔗 Project Link
 
-👉 [Paste your link here]
+👉 :     https://delightful-jalebi-daec6c.netlify.app/
 
 Developed By AkashProg 🚀
